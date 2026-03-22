@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlagVault CTF — Decode Me</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ── Challenge-page extras ── */
+
+    .challenge-layout {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 2rem;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .challenge-layout { grid-template-columns: 1fr; }
+    }
+
+    /* Encoded string display */
+    .encoded-block {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 1.5rem 1.8rem;
+      margin-bottom: 2rem;
+    }
+    .encoded-label {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 3px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 0.7rem;
+    }
+    .encoded-string {
+      font-family: var(--font-mono);
+      font-size: clamp(0.78rem, 2vw, 1rem);
+      color: var(--accent);
+      word-break: break-all;
+      letter-spacing: 1px;
+      line-height: 1.6;
+    }
+    .copy-btn {
+      margin-top: 0.8rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      letter-spacing: 2px;
+      color: var(--text-dim);
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.3rem 0.8rem;
+      cursor: pointer;
+      transition: all var(--transition);
+      text-transform: uppercase;
+    }
+    .copy-btn:hover { color: var(--accent); border-color: var(--accent); background: rgba(0,232,200,0.06); }
+    .copy-btn.copied { color: var(--accent); border-color: var(--accent); background: rgba(0,232,200,0.08); }
+
+    /* Live decoder panel */
+    .decoder-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 2rem;
+    }
+    .decoder-header {
+      background: var(--surface2);
+      padding: 0.6rem 1.2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .decoder-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .decoder-body { padding: 1.2rem; }
+    .decoder-input-wrap { margin-bottom: 0.8rem; }
+    .decoder-input-wrap label,
+    .decoder-output-wrap label {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      letter-spacing: 2px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
+    .decoder-output {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.7rem 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--accent);
+      min-height: 2.6rem;
+      word-break: break-all;
+      letter-spacing: 0.5px;
+      line-height: 1.5;
+      transition: color var(--transition);
+    }
+    .decoder-output.error { color: var(--accent2); }
+    .decoder-output.waiting { color: var(--text-dim); font-style: italic; }
+
+    /* Reference grid */
+    .ref-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+      margin-bottom: 2rem;
+    }
+    @media (max-width: 600px) { .ref-grid { grid-template-columns: 1fr; } }
+    .ref-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.2rem;
+      transition: all var(--transition);
+    }
+    .ref-card:hover { border-color: var(--border2); background: var(--surface2); }
+    .ref-card-title {
+      font-family: var(--font-hud);
+      font-size: 0.72rem;
+      color: var(--text-hi);
+      margin-bottom: 0.4rem;
+    }
+    .ref-card-desc {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    /* Sidebar cards */
+    .sidebar-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.4rem;
+      margin-bottom: 1.2rem;
+    }
+    .sidebar-card-title {
+      font-family: var(--font-hud);
+      font-size: 0.68rem;
+      letter-spacing: 2px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      padding-bottom: 0.6rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.42rem 0;
+      border-bottom: 1px solid rgba(22,64,96,0.5);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+    }
+    .info-row:last-of-type { border-bottom: none; }
+    .info-key { color: var(--text-dim); }
+    .info-val { color: var(--text-hi); }
+    .info-val.green { color: var(--accent); }
+    .info-val.amber { color: var(--accent3); }
+
+    .solve-bar-wrap { margin-top: 0.8rem; }
+    .solve-bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      color: var(--text-dim);
+      margin-bottom: 0.3rem;
+    }
+    .solve-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    .solve-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; width: 0%; transition: width 1.2s ease; }
+
+    /* Recent solvers */
+    .solver-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.42rem 0;
+      border-bottom: 1px solid rgba(22,64,96,0.4);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+    }
+    .solver-row:last-child { border-bottom: none; }
+    .solver-avatar {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.6rem; color: var(--accent); flex-shrink: 0;
+    }
+    .solver-name { color: var(--text-hi); flex: 1; }
+    .solver-time { color: var(--text-dim); font-size: 0.65rem; }
+
+    /* Animations */
+    @keyframes successPulse {
+      0%   { box-shadow: 0 0 0 0 rgba(0,232,200,0.4); }
+      70%  { box-shadow: 0 0 0 12px rgba(0,232,200,0); }
+      100% { box-shadow: 0 0 0 0 rgba(0,232,200,0); }
+    }
+    .form-control.success { border-color: var(--accent); animation: successPulse 0.6s ease; }
+    .form-control.error-border { border-color: var(--accent2); }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25%       { transform: translateX(-6px); }
+      75%       { transform: translateX(6px); }
+    }
+    .shake { animation: shake 0.3s ease; }
+
+    /* Confetti burst (tiny) */
+    .confetti-wrap { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9998; }
+  </style>
+</head>
+<body>
+
+<!-- ═══ NAV ═══ -->
+<nav class="nav">
+  <a href="#" class="nav-brand">
+    <span class="bracket">[</span>
+    <span class="brand-flag">⚑</span>
+    FLAG<span style="color:var(--accent)">VAULT</span>
+    <span class="bracket">]</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#">Home</a></li>
+    <li><a href="#" class="active">Challenges</a></li>
+    <li><a href="#">Scoreboard</a></li>
+    <li><a href="#">Rules</a></li>
+  </ul>
+  <div class="nav-status">
+    <span class="status-dot"></span>
+    CTF LIVE
+  </div>
+</nav>
+
+<!-- ═══ PAGE CONTENT ═══ -->
+<div class="page-wrap">
+
+  <!-- Breadcrumb -->
+  <div style="font-family:var(--font-mono);font-size:0.68rem;color:var(--text-dim);margin-bottom:2rem;display:flex;align-items:center;gap:0.5rem;">
+    <a href="#" style="color:var(--text-dim);">challenges</a>
+    <span>/</span>
+    <a href="#" style="color:var(--text-dim);">cryptography</a>
+    <span>/</span>
+    <span style="color:var(--accent);">decode-me</span>
+  </div>
+
+  <!-- Page Header -->
+  <div class="page-header" data-index="B64">
+    <div class="page-eyebrow">⚑ Cryptography · Challenge #01</div>
+    <h1 class="page-title">Decode <span class="hl">Me</span></h1>
+    <p class="page-desc">A suspicious string was intercepted in a network packet. The encoding is simple — but do you know what it is?</p>
+  </div>
+
+  <div class="challenge-layout">
+
+    <!-- ══ LEFT: Main Content ══ -->
+    <div>
+
+      <!-- Target String -->
+      <div class="sec-divider"><h3>Target String</h3></div>
+      <div class="encoded-block">
+        <div class="encoded-label">// intercepted payload · base64 encoded</div>
+        <div class="encoded-string" id="encodedTarget">RmxhZ1ZhdWx0e2I0czM2NF9pczNhc3l9</div>
+        <button class="copy-btn" id="copyBtn" onclick="copyString()">
+          <span>⎘</span><span id="copyBtnText">Copy</span>
+        </button>
+      </div>
+
+      <!-- Description -->
+      <div class="sec-divider"><h3>Scenario</h3></div>
+      <div class="ch-desc">
+        During a routine network inspection, the analyst intercepted the string above embedded in an HTTP response header. It doesn't look like plain text — but it's not encrypted either.
+        <br><br>
+        <span style="color:var(--accent3);">Your task:</span> Identify the encoding, decode the string, and submit the flag hidden inside it.
+        <br><br>
+        <span style="color:var(--text-dim);">Clue: This encoding converts binary data to ASCII using exactly 64 printable characters. You see it every day on the web.</span>
+      </div>
+
+      <!-- Quick Reference -->
+      <div class="sec-divider"><h3>Quick Reference — Base64</h3></div>
+      <div class="ref-grid">
+        <div class="ref-card">
+          <div class="ref-card-title">📖 What is Base64?</div>
+          <div class="ref-card-desc">
+            Encodes binary data as ASCII text using <code>A–Z</code>, <code>a–z</code>, <code>0–9</code>, <code>+</code>, <code>/</code>. Output length is always a multiple of 4 characters.
+          </div>
+        </div>
+        <div class="ref-card">
+          <div class="ref-card-title">🔍 How to spot it?</div>
+          <div class="ref-card-desc">
+            May end with <code>=</code> or <code>==</code> padding. Only uses the 64-char alphabet. Output is ~33% longer than original input.
+          </div>
+        </div>
+        <div class="ref-card">
+          <div class="ref-card-title">🐍 Python decode</div>
+          <div class="ref-card-desc">
+            <code>import base64</code><br>
+            <code>base64.b64decode("RmxhZ...")</code><br>
+            Returns a <code>bytes</code> object — call <code>.decode()</code>.
+          </div>
+        </div>
+        <div class="ref-card">
+          <div class="ref-card-title">💻 CLI decode</div>
+          <div class="ref-card-desc">
+            <code>echo "RmxhZ..." | base64 -d</code><br>
+            Works on Linux &amp; macOS.<br>
+            Windows: <code>certutil -decode</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Decoder -->
+      <div class="sec-divider"><h3>Live Decoder — Try It</h3></div>
+      <div class="decoder-panel">
+        <div class="decoder-header">
+          <span class="decoder-dot" style="background:#ff5f56;"></span>
+          <span class="decoder-dot" style="background:#ffbd2e;"></span>
+          <span class="decoder-dot" style="background:#27c93f;"></span>
+          &nbsp;&nbsp;base64_decoder.live
+        </div>
+        <div class="decoder-body">
+          <div class="decoder-input-wrap">
+            <label>Input — paste any Base64 string</label>
+            <input
+              type="text"
+              class="form-control"
+              id="decoderInput"
+              placeholder="Paste Base64 here and watch it decode…"
+              oninput="liveDecodeB64(this.value)"
+              spellcheck="false"
+              autocomplete="off"
+            />
+          </div>
+          <div class="decoder-output-wrap">
+            <label>Decoded Output</label>
+            <div class="decoder-output waiting" id="decoderOutput">— waiting for input —</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hints -->
+      <div class="sec-divider"><h3>Hints</h3></div>
+      <div class="hints-container">
+        <div class="hint-item" id="hint1">
+          <button class="hint-toggle" onclick="toggleHint('hint1')">
+            <span class="hint-num">01</span>
+            What encoding is being used?
+            <span class="hint-cost">Free</span>
+          </button>
+          <div class="hint-content">
+            The string <code>RmxhZ1ZhdWx0e2I0czM2NF9pczNhc3l9</code> is encoded with <strong style="color:var(--accent);">Base64</strong>. You can tell because it only uses characters from A–Z, a–z, 0–9, +, and /. The absence of padding (<code>=</code>) is valid when the decoded length is divisible by 3.
+          </div>
+        </div>
+        <div class="hint-item" id="hint2">
+          <button class="hint-toggle" onclick="toggleHint('hint2')">
+            <span class="hint-num">02</span>
+            How do I decode it without installing anything?
+            <span class="hint-cost">Free</span>
+          </button>
+          <div class="hint-content">
+            Use the <strong style="color:var(--accent);">Live Decoder</strong> right on this page — paste the string and the output appears instantly. Or visit <strong>CyberChef</strong> online and use the "From Base64" recipe.
+          </div>
+        </div>
+        <div class="hint-item" id="hint3">
+          <button class="hint-toggle" onclick="toggleHint('hint3')">
+            <span class="hint-num">03</span>
+            I decoded it — what do I do with the output?
+            <span class="hint-cost">Free</span>
+          </button>
+          <div class="hint-content">
+            The decoded output IS the flag. It will look exactly like <strong style="color:var(--accent2);">FlagVault{...}</strong>. Copy the entire string including the curly braces and submit it in the field below. You're done!
+          </div>
+        </div>
+      </div>
+
+      <!-- Flag format reminder -->
+      <div class="flag-format">
+        <span class="flag-icon">⚑</span>
+        <div>
+          Flag format: <strong>FlagVault{</strong><span style="color:var(--text-dim);">your_flag_here</span><strong>}</strong>
+        </div>
+      </div>
+
+      <!-- Submit Section -->
+      <div class="submit-section">
+        <div class="submit-title">Submit Flag</div>
+        <p class="submit-sub">Decode the string and paste the full flag below. Press Enter or click Submit.</p>
+
+        <div class="flag-input-wrap">
+          <span class="prefix">FlagVault{</span>
+          <input
+            type="text"
+            class="form-control"
+            id="flagInput"
+            placeholder="b4s364_..."
+            autocomplete="off"
+            spellcheck="false"
+            onkeydown="if(event.key==='Enter') submitFlag()"
+          />
+        </div>
+
+        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:0.5rem;">
+          <button class="btn btn-primary" onclick="submitFlag()">⚑ Submit Flag</button>
+          <button class="btn btn-danger"  onclick="clearInput()">✕ Clear</button>
+        </div>
+
+        <div class="submit-result" id="submitResult"></div>
+      </div>
+
+    </div><!-- /left column -->
+
+    <!-- ══ RIGHT: Sidebar ══ -->
+    <aside>
+
+      <!-- Challenge info card -->
+      <div class="sidebar-card">
+        <div class="sidebar-card-title">// Challenge Info</div>
+        <div class="info-row">
+          <span class="info-key">Category</span>
+          <span class="info-val"><span class="tag tag-purple">Cryptography</span></span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Difficulty</span>
+          <span class="info-val"><span class="tag tag-green">Easy</span></span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Points</span>
+          <span class="info-val amber">100 pts</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Author</span>
+          <span class="info-val green">FlagVault</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Encoding</span>
+          <span class="info-val">Base64</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Solves</span>
+          <span class="info-val green" id="solveCount">1,247</span>
+        </div>
+        <div class="solve-bar-wrap">
+          <div class="solve-bar-label">
+            <span>Solve rate</span>
+            <span id="solveRate">82%</span>
+          </div>
+          <div class="solve-bar">
+            <div class="solve-bar-fill" id="solveBarFill"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tools card -->
+      <div class="sidebar-card">
+        <div class="sidebar-card-title">// Recommended Tools</div>
+        <div class="tools-grid" style="grid-template-columns:1fr;">
+          <div class="tool-card" style="--tool-color:var(--accent);">
+            <span class="tool-icon">🌐</span>
+            <div class="tool-name">CyberChef</div>
+            <span class="tool-tag">Online · Free</span>
+            <p class="tool-desc">Drag-and-drop "From Base64" recipe. The go-to for all encoding tasks.</p>
+          </div>
+          <div class="tool-card" style="--tool-color:var(--accent3);">
+            <span class="tool-icon">🐍</span>
+            <div class="tool-name">Python 3</div>
+            <span class="tool-tag">CLI · Local</span>
+            <p class="tool-desc"><code>base64.b64decode("...")</code> — decode in one line from the REPL.</p>
+          </div>
+          <div class="tool-card" style="--tool-color:var(--accent4);">
+            <span class="tool-icon">💻</span>
+            <div class="tool-name">Live Decoder</div>
+            <span class="tool-tag">This Page · Built-in</span>
+            <p class="tool-desc">Paste the string into the decoder panel above for an instant result.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent solvers -->
+      <div class="sidebar-card">
+        <div class="sidebar-card-title">// Recent Solvers</div>
+        <div id="recentSolvers">
+          <div class="solver-row">
+            <div class="solver-avatar">α</div>
+            <span class="solver-name">0xAlpha</span>
+            <span class="solver-time">2m ago</span>
+          </div>
+          <div class="solver-row">
+            <div class="solver-avatar">β</div>
+            <span class="solver-name">b4s3_hunter</span>
+            <span class="solver-time">8m ago</span>
+          </div>
+          <div class="solver-row">
+            <div class="solver-avatar">γ</div>
+            <span class="solver-name">cryptogrl</span>
+            <span class="solver-time">15m ago</span>
+          </div>
+          <div class="solver-row">
+            <div class="solver-avatar">δ</div>
+            <span class="solver-name">n00bslayer</span>
+            <span class="solver-time">27m ago</span>
+          </div>
+          <div class="solver-row">
+            <div class="solver-avatar">ε</div>
+            <span class="solver-name">d3c0de_r</span>
+            <span class="solver-time">1h ago</span>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
+  </div><!-- /challenge-layout -->
+</div><!-- /page-wrap -->
+
+<!-- ═══ FOOTER ═══ -->
+<footer class="footer">
+  <div class="footer-brand">FLAG<span>VAULT</span> CTF</div>
+  <div class="footer-copy">© 2024 FlagVault · For educational purposes only</div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
