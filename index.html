@@ -239,12 +239,6 @@
     FLAG<span style="color:var(--accent)">VAULT</span>
     <span class="bracket">]</span>
   </a>
-  <ul class="nav-links">
-    <li><a href="#">Home</a></li>
-    <li><a href="#" class="active">Challenges</a></li>
-    <li><a href="#">Scoreboard</a></li>
-    <li><a href="#">Rules</a></li>
-  </ul>
   <div class="nav-status">
     <span class="status-dot"></span>
     CTF LIVE
@@ -356,79 +350,7 @@
           </div>
         </div>
       </div>
-
-      <!-- Hints -->
-      <div class="sec-divider"><h3>Hints</h3></div>
-      <div class="hints-container">
-        <div class="hint-item" id="hint1">
-          <button class="hint-toggle" onclick="toggleHint('hint1')">
-            <span class="hint-num">01</span>
-            What encoding is being used?
-            <span class="hint-cost">Free</span>
-          </button>
-          <div class="hint-content">
-            The string <code>RmxhZ1ZhdWx0e2I0czM2NF9pczNhc3l9</code> is encoded with <strong style="color:var(--accent);">Base64</strong>. You can tell because it only uses characters from A–Z, a–z, 0–9, +, and /. The absence of padding (<code>=</code>) is valid when the decoded length is divisible by 3.
-          </div>
-        </div>
-        <div class="hint-item" id="hint2">
-          <button class="hint-toggle" onclick="toggleHint('hint2')">
-            <span class="hint-num">02</span>
-            How do I decode it without installing anything?
-            <span class="hint-cost">Free</span>
-          </button>
-          <div class="hint-content">
-            Use the <strong style="color:var(--accent);">Live Decoder</strong> right on this page — paste the string and the output appears instantly. Or visit <strong>CyberChef</strong> online and use the "From Base64" recipe.
-          </div>
-        </div>
-        <div class="hint-item" id="hint3">
-          <button class="hint-toggle" onclick="toggleHint('hint3')">
-            <span class="hint-num">03</span>
-            I decoded it — what do I do with the output?
-            <span class="hint-cost">Free</span>
-          </button>
-          <div class="hint-content">
-            The decoded output IS the flag. It will look exactly like <strong style="color:var(--accent2);">FlagVault{...}</strong>. Copy the entire string including the curly braces and submit it in the field below. You're done!
-          </div>
-        </div>
-      </div>
-
-      <!-- Flag format reminder -->
-      <div class="flag-format">
-        <span class="flag-icon">⚑</span>
-        <div>
-          Flag format: <strong>FlagVault{</strong><span style="color:var(--text-dim);">your_flag_here</span><strong>}</strong>
-        </div>
-      </div>
-
-      <!-- Submit Section -->
-      <div class="submit-section">
-        <div class="submit-title">Submit Flag</div>
-        <p class="submit-sub">Decode the string and paste the full flag below. Press Enter or click Submit.</p>
-
-        <div class="flag-input-wrap">
-          <span class="prefix">FlagVault{</span>
-          <input
-            type="text"
-            class="form-control"
-            id="flagInput"
-            placeholder="b4s364_..."
-            autocomplete="off"
-            spellcheck="false"
-            onkeydown="if(event.key==='Enter') submitFlag()"
-          />
-        </div>
-
-        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:0.5rem;">
-          <button class="btn btn-primary" onclick="submitFlag()">⚑ Submit Flag</button>
-          <button class="btn btn-danger"  onclick="clearInput()">✕ Clear</button>
-        </div>
-
-        <div class="submit-result" id="submitResult"></div>
-      </div>
-
-    </div><!-- /left column -->
-
-    <!-- ══ RIGHT: Sidebar ══ -->
+<!-- ══ RIGHT: Sidebar ══ -->
     <aside>
 
       <!-- Challenge info card -->
@@ -530,6 +452,8 @@
 
   </div><!-- /challenge-layout -->
 </div><!-- /page-wrap -->
+    
+    </div><!-- /left column -->
 
 <!-- ═══ FOOTER ═══ -->
 <footer class="footer">
